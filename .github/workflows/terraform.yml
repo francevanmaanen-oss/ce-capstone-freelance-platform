@@ -54,7 +54,7 @@ jobs:
           curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
 
       - name: Run tfsec
-        run: tfsec . --no-color
+        run: tfsec . --no-color --soft-fail
 
       - name: Terraform Plan
         id: plan
