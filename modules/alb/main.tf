@@ -4,6 +4,7 @@ variable "vpc_id" { type = string }
 variable "public_subnet_ids" { type = list(string) }
 variable "alb_sg_id" { type = string }
 
+#tfsec:ignore:aws-elb-alb-not-public This is a public-facing web app; the ALB is intentionally internet-facing.
 resource "aws_lb" "main" {
   name               = "${var.project_name}-${var.environment}-alb"
   internal           = false
@@ -12,6 +13,7 @@ resource "aws_lb" "main" {
   subnets            = var.public_subnet_ids
 
   enable_deletion_protection = false
+  drop_invalid_header_fields = true
 
   tags = { Name = "${var.project_name}-${var.environment}-alb" }
 }
@@ -35,6 +37,7 @@ resource "aws_lb_target_group" "app" {
   tags = { Name = "${var.project_name}-${var.environment}-tg" }
 }
 
+#tfsec:ignore:aws-elb-http-not-used HTTPS is delivered as the Route53+ACM advanced requirement; HTTP listener retained for the base demo.
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = 80

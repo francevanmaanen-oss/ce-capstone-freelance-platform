@@ -3,6 +3,7 @@ locals {
   private_cidrs = [for i, az in var.azs : cidrsubnet(var.vpc_cidr, 8, i + 10)]
 }
 
+#tfsec:ignore:aws-ec2-require-vpc-flow-logs-for-all-vpcs Flow logs omitted in dev to avoid CloudWatch log costs; would enable in production.
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
@@ -11,6 +12,7 @@ resource "aws_vpc" "main" {
   tags = { Name = "${var.project_name}-${var.environment}-vpc" }
 }
 
+#tfsec:ignore:aws-ec2-no-public-ip-subnet Public subnets must auto-assign public IPs to host the ALB and NAT Gateway; app instances run in private subnets.
 resource "aws_subnet" "public" {
   count                   = length(var.azs)
   vpc_id                  = aws_vpc.main.id

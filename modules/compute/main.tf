@@ -55,12 +55,18 @@ resource "aws_launch_template" "app" {
     name = aws_iam_instance_profile.ec2.name
   }
 
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+  }
+
   network_interfaces {
     associate_public_ip_address = false
     security_groups             = [var.app_sg_id]
   }
 
-  user_data = base64encode(<<-EOF
+  user_data = base64encode(<<-USERDATA
     #!/bin/bash
     yum update -y
     yum install -y python3 python3-pip
@@ -124,7 +130,7 @@ resource "aws_launch_template" "app" {
     systemctl daemon-reload
     systemctl enable flask-app
     systemctl start flask-app
-  EOF
+  USERDATA
   )
 
   tag_specifications {

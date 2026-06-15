@@ -6,7 +6,8 @@ variable "tg_arn_suffix" { type = string }
 variable "alert_email" { type = string }
 
 resource "aws_sns_topic" "alerts" {
-  name = "${var.project_name}-${var.environment}-alerts"
+  name              = "${var.project_name}-${var.environment}-alerts"
+  kms_master_key_id = "alias/aws/sns"
 }
 
 resource "aws_sns_topic_subscription" "email" {
@@ -81,7 +82,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         height = 6
         properties = {
           title   = "CPU Utilization"
-          region  = "var.aws_region"
+          region  = "eu-central-1"
           period  = 60
           metrics = [["AWS/EC2", "CPUUtilization", "AutoScalingGroupName", var.asg_name]]
         }
@@ -94,7 +95,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         height = 6
         properties = {
           title   = "ALB Request Count"
-          region  = "var.aws_region"
+          region  = "eu-central-1"
           period  = 60
           metrics = [["AWS/ApplicationELB", "RequestCount", "LoadBalancer", var.alb_arn_suffix]]
         }
@@ -107,7 +108,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         height = 6
         properties = {
           title   = "Target Response Time"
-          region  = "var.aws_region"
+          region  = "eu-central-1"
           period  = 60
           metrics = [["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", var.alb_arn_suffix]]
         }
@@ -120,7 +121,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         height = 6
         properties = {
           title   = "Unhealthy Host Count"
-          region  = "var.aws_region"
+          region  = "eu-central-1"
           period  = 60
           metrics = [["AWS/ApplicationELB", "UnHealthyHostCount", "LoadBalancer", var.alb_arn_suffix, "TargetGroup", var.tg_arn_suffix]]
         }
