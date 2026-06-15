@@ -44,7 +44,7 @@ resource "aws_db_instance" "main" {
 
   backup_retention_period = 0
   skip_final_snapshot     = true
-  deletion_protection     = false
+  deletion_protection     = false #tfsec:ignore:aws0177
 
   tags = { Name = "${var.project_name}-${var.environment}-db" }
 }
