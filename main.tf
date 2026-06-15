@@ -35,7 +35,6 @@ module "vpc" {
 
   project_name = var.project_name
   environment  = var.environment
-  aws_region   = var.aws_region
   vpc_cidr     = var.vpc_cidr
   azs          = var.availability_zones
 }
@@ -63,7 +62,6 @@ module "compute" {
 
   project_name       = var.project_name
   environment        = var.environment
-  vpc_id             = module.vpc.vpc_id
   private_subnet_ids = module.vpc.private_subnet_ids
   app_sg_id          = module.security.app_sg_id
   target_group_arn   = module.alb.target_group_arn
@@ -78,7 +76,6 @@ module "rds" {
 
   project_name       = var.project_name
   environment        = var.environment
-  vpc_id             = module.vpc.vpc_id
   private_subnet_ids = module.vpc.private_subnet_ids
   db_sg_id           = module.security.db_sg_id
   db_name            = var.db_name
