@@ -9,11 +9,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "frances-bootcamp-tfstate-2026"
-    key            = "bootcamp-project/terraform.tfstate"
-    region         = "eu-central-1"
-    use_lockfile   = true
-    encrypt        = true
+    bucket       = "frances-bootcamp-tfstate-2026"
+    key          = "bootcamp-project/terraform.tfstate"
+    region       = "eu-central-1"
+    use_lockfile = true
+    encrypt      = true
   }
 }
 
