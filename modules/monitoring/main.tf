@@ -5,6 +5,7 @@ variable "alb_arn_suffix" { type = string }
 variable "tg_arn_suffix" { type = string }
 variable "alert_email" { type = string }
 
+#tfsec:ignore:aws-sns-topic-encryption-use-cmk AWS-managed SNS key is sufficient for dev alerting; a dedicated CMK adds cost and key-management overhead not warranted here.
 resource "aws_sns_topic" "alerts" {
   name              = "${var.project_name}-${var.environment}-alerts"
   kms_master_key_id = "alias/aws/sns"
