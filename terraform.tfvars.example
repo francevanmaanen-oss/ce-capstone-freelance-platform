@@ -1,0 +1,20 @@
+# Copy this to terraform.tfvars and fill in your values
+# DO NOT commit terraform.tfvars to Git
+
+aws_region   = "eu-central-1"
+project_name = "bootcamp-project"
+environment  = "dev"
+owner        = "your-name"
+
+vpc_cidr           = "10.0.0.0/16"
+availability_zones = ["eu-central-1a", "eu-central-1b", "eu-central-1c"]
+
+instance_type        = "t3.micro"
+asg_min_size         = 3
+asg_max_size         = 6
+asg_desired_capacity = 3
+
+db_name     = "appdb"
+db_username = "dbadmin"
+
+alert_email = "your-email@example.com"

@@ -1,0 +1,20 @@
+# Local terraform state (never commit this)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Terraform vars with secrets
+terraform.tfvars
+
+# Plan files
+tfplan
+*.tfplan
+
+# Credentials / keys
+*.pem
+*.key
+.env
+
+# OS
+.DS_Store
