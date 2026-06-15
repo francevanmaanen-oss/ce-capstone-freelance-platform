@@ -70,3 +70,5 @@ CloudWatch dashboard: Console → CloudWatch → Dashboards → `bootcamp-projec
 ```bash
 terraform destroy
 ```
+
+## Status: deployed and monitored
