@@ -87,12 +87,14 @@ module "rds" {
 module "monitoring" {
   source = "./modules/monitoring"
 
-  project_name   = var.project_name
-  environment    = var.environment
-  asg_name       = module.compute.asg_name
-  alb_arn_suffix = module.alb.alb_arn_suffix
-  tg_arn_suffix  = module.alb.tg_arn_suffix
-  alert_email    = var.alert_email
+  project_name          = var.project_name
+  environment           = var.environment
+  asg_name              = module.compute.asg_name
+  alb_arn_suffix        = module.alb.alb_arn_suffix
+  tg_arn_suffix         = module.alb.tg_arn_suffix
+  alert_email           = var.alert_email
+  scale_up_policy_arn   = module.compute.scale_up_policy_arn
+  scale_down_policy_arn = module.compute.scale_down_policy_arn
 }
 
 module "ecr" {
