@@ -69,6 +69,8 @@ module "compute" {
   min_size           = var.asg_min_size
   max_size           = var.asg_max_size
   desired_capacity   = var.asg_desired_capacity
+  ecr_repository_url = module.ecr.repository_url
+  aws_region         = var.aws_region
 }
 
 module "rds" {
@@ -91,4 +93,11 @@ module "monitoring" {
   alb_arn_suffix = module.alb.alb_arn_suffix
   tg_arn_suffix  = module.alb.tg_arn_suffix
   alert_email    = var.alert_email
+}
+
+module "ecr" {
+  source = "./modules/ecr"
+
+  project_name = var.project_name
+  environment  = var.environment
 }
