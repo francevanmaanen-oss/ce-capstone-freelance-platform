@@ -56,6 +56,14 @@ jobs:
       - name: Run tfsec
         run: tfsec . --no-color --soft-fail
 
+      - name: Run Checkov (Policy as Code)
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          config_file: .checkov.yaml
+          external_checks_dirs: policies
+          soft_fail: true
+
       - name: Terraform Plan
         id: plan
         run: terraform plan -no-color -out=tfplan
