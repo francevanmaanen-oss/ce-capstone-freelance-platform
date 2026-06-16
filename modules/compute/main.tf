@@ -10,6 +10,13 @@ variable "desired_capacity" { type = number }
 variable "ecr_repository_url" { type = string }
 variable "aws_region" { type = string }
 
+resource "aws_cloudwatch_log_group" "app" {
+  name              = "/${var.project_name}/${var.environment}/app"
+  retention_in_days = 14
+
+  tags = { Name = "${var.project_name}-${var.environment}-app-logs" }
+}
+
 resource "aws_iam_role" "ec2" {
   name = "${var.project_name}-${var.environment}-ec2-role"
 
@@ -36,6 +43,24 @@ resource "aws_iam_role_policy_attachment" "cloudwatch" {
 resource "aws_iam_role_policy_attachment" "ecr" {
   role       = aws_iam_role.ec2.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
+resource "aws_iam_role_policy" "logs" {
+  name = "${var.project_name}-${var.environment}-logs"
+  role = aws_iam_role.ec2.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams"
+      ]
+      Resource = "${aws_cloudwatch_log_group.app.arn}:*"
+    }]
+  })
 }
 
 resource "aws_iam_instance_profile" "ec2" {
@@ -84,7 +109,13 @@ resource "aws_launch_template" "app" {
     aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${var.ecr_repository_url}
 
     docker pull ${var.ecr_repository_url}:latest
-    docker run -d --restart always -p 5000:5000 --name freelancehub -e ENVIRONMENT=${var.environment} ${var.ecr_repository_url}:latest
+    docker run -d --restart always -p 5000:5000 --name freelancehub \
+      -e ENVIRONMENT=${var.environment} \
+      --log-driver=awslogs \
+      --log-opt awslogs-region=${var.aws_region} \
+      --log-opt awslogs-group=${aws_cloudwatch_log_group.app.name} \
+      --log-opt awslogs-create-group=true \
+      ${var.ecr_repository_url}:latest
   USERDATA
   )
 
@@ -149,3 +180,4 @@ resource "aws_autoscaling_policy" "scale_down" {
 output "asg_name" { value = aws_autoscaling_group.app.name }
 output "scale_up_policy_arn" { value = aws_autoscaling_policy.scale_up.arn }
 output "scale_down_policy_arn" { value = aws_autoscaling_policy.scale_down.arn }
+output "app_log_group_name" { value = aws_cloudwatch_log_group.app.name }

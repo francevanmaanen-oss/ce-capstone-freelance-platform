@@ -4,8 +4,9 @@ variable "asg_name" { type = string }
 variable "alb_arn_suffix" { type = string }
 variable "tg_arn_suffix" { type = string }
 variable "alert_email" { type = string }
+variable "scale_up_policy_arn" { type = string }
+variable "scale_down_policy_arn" { type = string }
 
-#tfsec:ignore:aws-sns-topic-encryption-use-cmk AWS-managed SNS key is sufficient for dev alerting; a dedicated CMK adds cost and key-management overhead not warranted here.
 resource "aws_sns_topic" "alerts" {
   name              = "${var.project_name}-${var.environment}-alerts"
   kms_master_key_id = "alias/aws/sns"
@@ -67,6 +68,40 @@ resource "aws_cloudwatch_metric_alarm" "unhealthy_hosts" {
   dimensions = {
     LoadBalancer = var.alb_arn_suffix
     TargetGroup  = var.tg_arn_suffix
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "scale_up" {
+  alarm_name          = "${var.project_name}-${var.environment}-asg-scale-up"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = 120
+  statistic           = "Average"
+  threshold           = 70
+  alarm_description   = "Scale up when ASG average CPU exceeds 70%"
+  alarm_actions       = [var.scale_up_policy_arn]
+
+  dimensions = {
+    AutoScalingGroupName = var.asg_name
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "scale_down" {
+  alarm_name          = "${var.project_name}-${var.environment}-asg-scale-down"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 3
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = 120
+  statistic           = "Average"
+  threshold           = 25
+  alarm_description   = "Scale down when ASG average CPU drops below 25%"
+  alarm_actions       = [var.scale_down_policy_arn]
+
+  dimensions = {
+    AutoScalingGroupName = var.asg_name
   }
 }
 
