@@ -7,6 +7,8 @@ variable "instance_type" { type = string }
 variable "min_size" { type = number }
 variable "max_size" { type = number }
 variable "desired_capacity" { type = number }
+variable "ecr_repository_url" { type = string }
+variable "aws_region" { type = string }
 
 resource "aws_iam_role" "ec2" {
   name = "${var.project_name}-${var.environment}-ec2-role"
@@ -29,6 +31,11 @@ resource "aws_iam_role_policy_attachment" "ssm" {
 resource "aws_iam_role_policy_attachment" "cloudwatch" {
   role       = aws_iam_role.ec2.name
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "ecr" {
+  role       = aws_iam_role.ec2.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
 resource "aws_iam_instance_profile" "ec2" {
@@ -58,7 +65,7 @@ resource "aws_launch_template" "app" {
   metadata_options {
     http_endpoint               = "enabled"
     http_tokens                 = "required"
-    http_put_response_hop_limit = 1
+    http_put_response_hop_limit = 2
   }
 
   network_interfaces {
@@ -68,68 +75,16 @@ resource "aws_launch_template" "app" {
 
   user_data = base64encode(<<-USERDATA
     #!/bin/bash
+    set -e
     yum update -y
-    yum install -y python3 python3-pip
-    pip3 install flask boto3
+    yum install -y docker
+    systemctl enable docker
+    systemctl start docker
 
-    mkdir -p /opt/app
-    cat > /opt/app/app.py << 'PYEOF'
-    import os
-    import urllib.request
-    from flask import Flask, jsonify
+    aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${var.ecr_repository_url}
 
-    app = Flask(__name__)
-
-    def get_metadata(path):
-        try:
-            token_req = urllib.request.Request(
-                "http://169.254.169.254/latest/api/token",
-                headers={"X-aws-ec2-metadata-token-ttl-seconds": "21600"},
-                method="PUT")
-            token = urllib.request.urlopen(token_req, timeout=2).read().decode()
-            req = urllib.request.Request(
-                f"http://169.254.169.254/latest/meta-data/{path}",
-                headers={"X-aws-ec2-metadata-token": token})
-            return urllib.request.urlopen(req, timeout=2).read().decode()
-        except:
-            return "unavailable"
-
-    @app.route("/")
-    def index():
-        return jsonify({
-            "instance_id": get_metadata("instance-id"),
-            "availability_zone": get_metadata("placement/availability-zone"),
-            "health": "healthy",
-            "environment": os.environ.get("ENVIRONMENT", "dev")
-        })
-
-    @app.route("/health")
-    def health():
-        return jsonify({"status": "healthy"}), 200
-
-    if __name__ == "__main__":
-        app.run(host="0.0.0.0", port=5000)
-    PYEOF
-
-    cat > /etc/systemd/system/flask-app.service << 'SVCEOF'
-    [Unit]
-    Description=Flask App
-    After=network.target
-
-    [Service]
-    User=root
-    WorkingDirectory=/opt/app
-    ExecStart=/usr/bin/python3 /opt/app/app.py
-    Restart=always
-    Environment=ENVIRONMENT=${var.environment}
-
-    [Install]
-    WantedBy=multi-user.target
-    SVCEOF
-
-    systemctl daemon-reload
-    systemctl enable flask-app
-    systemctl start flask-app
+    docker pull ${var.ecr_repository_url}:latest
+    docker run -d --restart always -p 5000:5000 --name freelancehub -e ENVIRONMENT=${var.environment} ${var.ecr_repository_url}:latest
   USERDATA
   )
 
@@ -159,6 +114,13 @@ resource "aws_autoscaling_group" "app" {
   launch_template {
     id      = aws_launch_template.app.id
     version = "$Latest"
+  }
+
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 50
+    }
   }
 
   tag {
