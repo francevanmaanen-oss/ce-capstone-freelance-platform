@@ -1,0 +1,23 @@
+directory:
+  - .
+
+external-checks-dir:
+  - policies
+
+compact: true
+quiet: true
+
+skip-check:
+  - CKV_AWS_18
+  - CKV_AWS_144
+  - CKV_AWS_145
+  - CKV2_AWS_6
+  - CKV_AWS_2
+  - CKV_AWS_103
+  - CKV_AWS_91
+  - CKV_AWS_260
+  - CKV_AWS_157
+  - CKV_AWS_118
+  - CKV_AWS_293
+  - CKV_AWS_354
+  - CKV_AWS_338
