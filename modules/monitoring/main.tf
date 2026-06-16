@@ -10,7 +10,7 @@ variable "scale_down_policy_arn" { type = string }
 
 #tfsec:ignore:aws-sns-enable-topic-encryption Alerts carry non-sensitive operational data (CPU, health); AWS-managed SNS key blocks CloudWatch from publishing, breaking the alert path. Encryption omitted deliberately.
 resource "aws_sns_topic" "alerts" {
-  name              = "${var.project_name}-${var.environment}-alerts"
+  name = "${var.project_name}-${var.environment}-alerts"
 }
 
 resource "aws_sns_topic_subscription" "email" {

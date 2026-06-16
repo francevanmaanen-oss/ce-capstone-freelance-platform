@@ -93,6 +93,16 @@ resource "aws_launch_template" "app" {
     http_put_response_hop_limit = 2
   }
 
+  block_device_mappings {
+    device_name = "/dev/xvda"
+    ebs {
+      volume_size           = 8
+      volume_type           = "gp3"
+      encrypted             = true
+      delete_on_termination = true
+    }
+  }
+
   network_interfaces {
     associate_public_ip_address = false
     security_groups             = [var.app_sg_id]
@@ -123,6 +133,15 @@ resource "aws_launch_template" "app" {
     resource_type = "instance"
     tags = {
       Name        = "${var.project_name}-${var.environment}-app"
+      Project     = var.project_name
+      Environment = var.environment
+    }
+  }
+
+  tag_specifications {
+    resource_type = "volume"
+    tags = {
+      Name        = "${var.project_name}-${var.environment}-app-volume"
       Project     = var.project_name
       Environment = var.environment
     }
