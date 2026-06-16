@@ -67,3 +67,9 @@ Triggered the refresh manually with `aws autoscaling start-instance-refresh`, wh
 
 **Prevention**
 Understand that a launch template change is not self-deploying — a refresh (automatic via the `instance_refresh` trigger, or manual) is always required to roll it out. When in doubt, verify the deployed launch template's user data directly and check the target group health rather than assuming an apply pushed the change live.
+
+
+Symptom: CloudWatch alarms transitioned to ALARM but no notification email arrived.
+Root cause: The SNS topic was encrypted with the AWS-managed KMS key (alias/aws/sns), added to satisfy a tfsec finding. The AWS-managed SNS key does not grant CloudWatch permission to use it, so every publish failed with "CloudWatch Alarms does not have authorization to access the SNS topic encryption key." Confirmed via the alarm history action data; a direct aws sns publish succeeded, isolating the failure to the CloudWatch→encrypted-topic path.
+Resolution: Removed encryption from the SNS topic (alerts carry non-sensitive operational data), suppressed the tfsec finding with documented justification. Action state changed to "Succeeded" and email delivery confirmed.
+Prevention: When encrypting SNS topics that receive CloudWatch alarm notifications, use a customer-managed KMS key with a policy granting CloudWatch (cloudwatch.amazonaws.com) kms:GenerateDataKey and kms:Decrypt — or omit encryption for non-sensitive operational topics.
