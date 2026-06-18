@@ -1,0 +1,59 @@
+name: Drift Detection
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+
+env:
+  TF_VERSION: "1.10.0"
+  AWS_REGION: "eu-central-1"
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    name: Detect drift
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan (detailed exit code)
+        id: plan
+        run: |
+          set +e
+          terraform plan -input=false -detailed-exitcode -no-color -out=tfplan
+          echo "exitcode=$?" >> "$GITHUB_OUTPUT"
+          set -e
+
+      - name: Report drift status
+        run: |
+          case "${{ steps.plan.outputs.exitcode }}" in
+            0)
+              echo "::notice::No drift detected — live infrastructure matches the Terraform code."
+              ;;
+            2)
+              echo "::warning::Drift detected — the live infrastructure differs from the committed Terraform code. Review the plan output above."
+              ;;
+            *)
+              echo "::error::Terraform plan failed to run."
+              exit 1
+              ;;
+          esac
